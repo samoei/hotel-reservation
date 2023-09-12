@@ -14,7 +14,7 @@ build:
 	@go build -o bin/api
 
 run: build
-	@./bin/api --listenAddr :7070
+	@./bin/api --listenAddr :7071
 
 test:
 	@go test -v ./...
