@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -25,6 +26,18 @@ type CreateUserParams struct {
 type UpdateUserParams struct {
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
+}
+
+func (u UpdateUserParams) ToBson() bson.M {
+	m := bson.M{}
+	if len(u.FirstName) > 0 {
+		m["firstName"] = u.FirstName
+	}
+
+	if len(u.LastName) > 0 {
+		m["lastName"] = u.LastName
+	}
+	return m
 }
 
 type User struct {

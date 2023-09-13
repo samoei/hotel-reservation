@@ -69,6 +69,7 @@ func (h *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 	var (
 		values bson.M
 		userId = c.Params("id")
+		params types.UpdateUserParams
 	)
 
 	oid, err := primitive.ObjectIDFromHex(userId)
@@ -76,11 +77,13 @@ func (h *UserHandler) HandleUpdateUser(c *fiber.Ctx) error {
 		return err
 	}
 
-	if err := c.BodyParser(&values); err != nil {
+	if err := c.BodyParser(&params); err != nil {
 		return err
 	}
 
 	filter := bson.M{"_id": oid}
+
+	values = params.ToBson()
 
 	if err := h.userStore.UpdateUser(c.Context(), filter, values); err != nil {
 		return err
