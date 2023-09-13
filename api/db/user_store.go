@@ -16,6 +16,7 @@ type UserStore interface {
 	GetUsers(context.Context) ([]*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
 	DeleteUser(context.Context, string) error
+	UpdateUser(ctx context.Context, filter, update bson.M) error
 }
 
 type MongoUserStore struct {
@@ -30,22 +31,7 @@ func NewMongoUserStore(client mongo.Client) *MongoUserStore {
 		collection: usersCollection,
 	}
 }
-func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
-	oid, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
 
-	_, err = s.collection.DeleteOne(ctx, bson.M{"_id": oid})
-
-	if err != nil {
-		return err
-	}
-
-	//TODO: Might need to log if no record was deleted
-
-	return nil
-}
 func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
 	res, err := s.collection.InsertOne(ctx, user)
 	if err != nil {
@@ -83,4 +69,36 @@ func (s *MongoUserStore) GetUsers(ctx context.Context) ([]*types.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+func (s *MongoUserStore) UpdateUser(ctx context.Context, filter, values bson.M) error {
+
+	update := bson.D{
+		{
+			Key: "$set", Value: values,
+		},
+	}
+
+	_, err := s.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.collection.DeleteOne(ctx, bson.M{"_id": oid})
+
+	if err != nil {
+		return err
+	}
+
+	//TODO: Might need to log if no record was deleted
+
+	return nil
 }

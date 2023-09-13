@@ -45,6 +45,7 @@ func main() {
 	apiv1.Post("/user", userHandler.HandleCreateUser)
 	apiv1.Get("/users", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
+	apiv1.Put("/user/:id", userHandler.HandleUpdateUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
 
 	//Start the server
