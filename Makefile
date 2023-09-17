@@ -16,5 +16,8 @@ build:
 run: build
 	@./bin/api --listenAddr :7071
 
+seed:
+	@go run scripts/seed.go
+
 test:
 	@go test -v ./...

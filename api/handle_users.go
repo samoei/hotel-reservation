@@ -21,10 +21,6 @@ func NewUserHandler(db db.UserStore) *UserHandler {
 	}
 }
 
-func (h *UserHandler) HandlePutUser(c *fiber.Ctx) error {
-	return nil
-}
-
 func (h *UserHandler) HandleCreateUser(c *fiber.Ctx) error {
 	var params types.CreateUserParams
 	if err := c.BodyParser(&params); err != nil {

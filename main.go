@@ -12,8 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const dburi = "mongodb://localhost:27017"
-
 // Create a new fiber instance with custom config
 var config = fiber.Config{
 	// Override default error handler
@@ -25,7 +23,7 @@ var config = fiber.Config{
 func main() {
 
 	//set up mongo DB
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dburi))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +39,7 @@ func main() {
 	apiv1 := app.Group("api/v1")
 
 	//Handlers
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(*client))
+	userHandler := api.NewUserHandler(db.NewMongoUserStore(*client, db.DBNAME))
 	apiv1.Post("/user", userHandler.HandleCreateUser)
 	apiv1.Get("/users", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)

@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/samoei/hotel-reservation/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,7 +12,12 @@ import (
 
 const userColl = "users"
 
+type Dropper interface {
+	Drop(context.Context) error
+}
+
 type UserStore interface {
+	Dropper
 	GetUserByID(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
@@ -24,12 +30,17 @@ type MongoUserStore struct {
 	collection *mongo.Collection
 }
 
-func NewMongoUserStore(client mongo.Client) *MongoUserStore {
-	usersCollection := client.Database(DBNAME).Collection(userColl)
+func NewMongoUserStore(client mongo.Client, dbName string) *MongoUserStore {
+	usersCollection := client.Database(dbName).Collection(userColl)
 	return &MongoUserStore{
 		client:     &client,
 		collection: usersCollection,
 	}
+}
+
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+	fmt.Println("... Dropping users collection")
+	return s.collection.Drop(ctx)
 }
 
 func (s *MongoUserStore) InsertUser(ctx context.Context, user *types.User) (*types.User, error) {
