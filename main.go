@@ -38,13 +38,30 @@ func main() {
 	// Separate into versions
 	apiv1 := app.Group("api/v1")
 
-	//Handlers
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(*client, db.DBNAME))
+	//Initialise handlers
+	var (
+		hotelStore = db.NewMongoHotelStore(*client)
+		roomStore  = db.NewMongoRoomStore(*client, hotelStore)
+		userStore  = db.NewMongoUserStore(*client, db.DBNAME)
+		store      = &db.Store{
+			Room:  roomStore,
+			Hotel: hotelStore,
+			User:  userStore,
+		}
+		userHandler  = api.NewUserHandler(store)
+		hotelHandler = api.NewHotelHandler(store)
+	)
+
+	//User Handlers
 	apiv1.Post("/user", userHandler.HandleCreateUser)
 	apiv1.Get("/users", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	apiv1.Put("/user/:id", userHandler.HandleUpdateUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
+
+	//Hotel Handlers
+	apiv1.Get("/hotels", hotelHandler.HandleGetHotels)
+	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 
 	//Start the server
 	err = app.Listen(*listenAddr)

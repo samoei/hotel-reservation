@@ -12,26 +12,52 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func main() {
+var (
+	client     *mongo.Client
+	hotelStore *db.MongoHotelStore
+	roomStore  *db.MongoRoomStore
+	ctx        context.Context
+)
 
-	ctx := context.Background()
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	///delete any existing tables
-	if err := client.Database(db.DBNAME).Drop(ctx); err != nil {
-		log.Fatal(err)
-	}
-
-	hotelStore := db.NewMongoHotelStore(*client)
-	roomStore := db.NewMongoRoomStore(*client, hotelStore)
+func seedHotel(name, location string, stars int) {
 	hotel := types.Hotel{
-		Name:     "Hotel Rwanda",
-		Location: "Kigali",
+		Name:     name,
+		Location: location,
 		Rooms:    []primitive.ObjectID{},
+		Stars:    stars,
+	}
+
+	rooms := []types.Room{
+		{
+			RoomNumber:    "101A",
+			RoomType:      "Single",
+			PricePerNight: 99.99,
+		},
+		{
+			RoomNumber:    "101B",
+			RoomType:      "Double",
+			PricePerNight: 120.99,
+		},
+		{
+			RoomNumber:    "201A",
+			RoomType:      "Single",
+			PricePerNight: 99.99,
+		},
+		{
+			RoomNumber:    "201B",
+			RoomType:      "Double",
+			PricePerNight: 120.99,
+		},
+		{
+			RoomNumber:    "301A",
+			RoomType:      "Suite",
+			PricePerNight: 169.99,
+		},
+		{
+			RoomNumber:    "301B",
+			RoomType:      "Suite",
+			PricePerNight: 169.99,
+		},
 	}
 
 	insertedHotel, err := hotelStore.InsertHotel(ctx, &hotel)
@@ -42,25 +68,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	rooms := []types.Room{
-		{
-			Type:      types.Single,
-			BasePrice: 99.99,
-		},
-		{
-			Type:      types.Double,
-			BasePrice: 149.99,
-		},
-		{
-			Type:      types.SeaView,
-			BasePrice: 199.99,
-		},
-		{
-			Type:      types.Deluxe,
-			BasePrice: 249.99,
-		},
-	}
-
 	for _, room := range rooms {
 		room.HotelID = insertedHotel.ID
 		insertedRoom, err := roomStore.InsertRoom(ctx, &room)
@@ -69,5 +76,25 @@ func main() {
 		}
 		fmt.Println("Room inserted successfully ", insertedRoom)
 	}
+}
+
+func main() {
+	seedHotel("Hotel Lamada", "Nairobi", 3)
+	seedHotel("Hotel One", "Berlin", 4)
+	seedHotel("Temple Hotel", "Dublin", 2)
+}
+
+func init() {
+	var err error
+	client, err = mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
+	if err != nil {
+		log.Fatal(err)
+	}
+	///delete any existing tables
+	if err := client.Database(db.DBNAME).Drop(ctx); err != nil {
+		log.Fatal(err)
+	}
+	hotelStore = db.NewMongoHotelStore(*client)
+	roomStore = db.NewMongoRoomStore(*client, hotelStore)
 
 }
