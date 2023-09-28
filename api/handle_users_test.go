@@ -18,7 +18,7 @@ import (
 const testdburi = "mongodb://localhost:27017"
 
 type testdb struct {
-	db.UserStore
+	db.Store
 }
 
 func setup(t *testing.T) *testdb {
@@ -26,13 +26,20 @@ func setup(t *testing.T) *testdb {
 	if err != nil {
 		log.Fatal(err)
 	}
+	hotelStore := db.NewMongoHotelStore(*client)
+	roomStore := db.NewMongoRoomStore(*client, hotelStore)
+	UserStore := db.NewMongoUserStore(*client, db.TESTDBNAME)
 	return &testdb{
-		UserStore: db.NewMongoUserStore(*client, db.TESTDBNAME),
+		db.Store{
+			Room:  roomStore,
+			Hotel: hotelStore,
+			User:  UserStore,
+		},
 	}
 }
 
 func (tdb *testdb) teardown(t *testing.T) {
-	if err := tdb.UserStore.Drop(context.TODO()); err != nil {
+	if err := tdb.User.Drop(context.TODO()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -41,7 +48,7 @@ func TestPostUser(t *testing.T) {
 	tdb := setup(t)
 	defer tdb.teardown(t)
 
-	userHandler := NewUserHandler(tdb.UserStore)
+	userHandler := NewUserHandler(&tdb.Store)
 	app := fiber.New()
 	app.Post("/", userHandler.HandleCreateUser)
 	// password := "9876hunter12345"

@@ -16,6 +16,7 @@ type HotelStore interface {
 	Update(context.Context, bson.M, bson.M) error
 	GetHotels(context.Context, bson.M) ([]*types.Hotel, error)
 	GetHotelByID(context.Context, primitive.ObjectID) (*types.Hotel, error)
+	UpdateHotel(ctx context.Context, filter, update bson.M) error
 }
 
 type MongoHotelStore struct {
@@ -72,4 +73,18 @@ func (s MongoHotelStore) GetHotelByID(ctx context.Context, id primitive.ObjectID
 
 	return hotel, nil
 
+}
+
+func (s MongoHotelStore) UpdateHotel(ctx context.Context, filter, values bson.M) error {
+	update := bson.D{
+		{
+			Key: "$set", Value: values,
+		},
+	}
+	_, err := s.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+	return nil
 }

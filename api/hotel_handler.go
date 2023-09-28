@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/samoei/hotel-reservation/api/db"
+	"github.com/samoei/hotel-reservation/types"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -78,4 +79,36 @@ func (h *HotelHandler) HandleGetRooms(c *fiber.Ctx) error {
 
 	return c.JSON(&rooms)
 
+}
+
+func (h *HotelHandler) HandleUpdateHotel(c *fiber.Ctx) error {
+	var (
+		hotelId = c.Params("id")
+		values  bson.M
+		params  types.Hotel
+	)
+
+	oid, err := primitive.ObjectIDFromHex(hotelId)
+
+	if err != nil {
+		return err
+	}
+
+	if err := c.BodyParser(&params); err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": oid}
+	values = bson.M{
+		"name":     params.Name,
+		"stars":    params.Stars,
+		"location": params.Location,
+	}
+
+	fmt.Println(">>>>>>>>>>>", filter, values)
+
+	if err := h.store.Hotel.UpdateHotel(c.Context(), filter, values); err != nil {
+		return err
+	}
+	return nil
 }

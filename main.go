@@ -35,7 +35,7 @@ func main() {
 	//Initiate fibre
 	app := fiber.New(config)
 
-	// Separate into versions
+	// Separate handlers into versions
 	apiv1 := app.Group("api/v1")
 
 	//Initialise handlers
@@ -62,6 +62,7 @@ func main() {
 	//Hotel Handlers
 	apiv1.Get("/hotels", hotelHandler.HandleGetHotels)
 	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
+	apiv1.Put("/hotel/:id", hotelHandler.HandleUpdateHotel)
 	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 
 	//Start the server
