@@ -105,8 +105,6 @@ func (h *HotelHandler) HandleUpdateHotel(c *fiber.Ctx) error {
 		"location": params.Location,
 	}
 
-	fmt.Println(">>>>>>>>>>>", filter, values)
-
 	if err := h.store.Hotel.UpdateHotel(c.Context(), filter, values); err != nil {
 		return err
 	}

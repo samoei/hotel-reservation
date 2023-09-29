@@ -81,6 +81,7 @@ func (s MongoHotelStore) UpdateHotel(ctx context.Context, filter, values bson.M)
 			Key: "$set", Value: values,
 		},
 	}
+
 	_, err := s.collection.UpdateOne(ctx, filter, update)
 
 	if err != nil {

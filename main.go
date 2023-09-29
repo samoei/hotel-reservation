@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/samoei/hotel-reservation/api"
 	"github.com/samoei/hotel-reservation/api/db"
+	"github.com/samoei/hotel-reservation/api/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -36,7 +37,7 @@ func main() {
 	app := fiber.New(config)
 
 	// Separate handlers into versions
-	apiv1 := app.Group("api/v1")
+	apiv1 := app.Group("api/v1", middleware.JWTAuthentication)
 
 	//Initialise handlers
 	var (
