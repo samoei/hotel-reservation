@@ -51,7 +51,11 @@ func main() {
 		}
 		userHandler  = api.NewUserHandler(store)
 		hotelHandler = api.NewHotelHandler(store)
+		authHandler  = api.NewAuthHandler(store)
 	)
+	//Auth
+	apiBase := app.Group("api")
+	apiBase.Post("/auth", authHandler.HandleAuth)
 
 	//User Handlers
 	apiv1.Post("/user", userHandler.HandleCreateUser)
