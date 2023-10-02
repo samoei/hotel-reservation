@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
@@ -17,16 +18,26 @@ func JWTAuthentication(c *fiber.Ctx) error {
 		return fmt.Errorf("Unauthorized")
 	}
 
-	if err := parseToken(token); err != nil {
+	claims, err := validateToken(token)
+
+	if err != nil {
 		return err
 	}
 
-	fmt.Println("token", token)
+	expiresFloat := claims["expires"].(float64)
+	expires := int64(expiresFloat)
 
-	return nil
+	//Check if the token had expired
+	if time.Now().Unix() > expires {
+		return fmt.Errorf("token has expired")
+	}
+
+	fmt.Println(claims)
+
+	return c.Next()
 }
 
-func parseToken(tokenStr string) error {
+func validateToken(tokenStr string) (jwt.MapClaims, error) {
 
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
@@ -44,11 +55,14 @@ func parseToken(tokenStr string) error {
 
 	if err != nil {
 		fmt.Println(err)
-		return fmt.Errorf("Unauthorized")
+		return nil, fmt.Errorf("Unauthorized")
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		fmt.Println(claims["foo"], claims["nbf"])
+	claims, ok := token.Claims.(jwt.MapClaims)
+
+	if ok && token.Valid {
+		return claims, nil
 	}
-	return fmt.Errorf("Unauthorized")
+
+	return nil, fmt.Errorf("Unauthorized")
 }

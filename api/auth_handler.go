@@ -3,11 +3,14 @@ package api
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/samoei/hotel-reservation/api/db"
+	"github.com/samoei/hotel-reservation/types"
 	"go.mongodb.org/mongo-driver/mongo"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthHandler struct {
@@ -25,6 +28,17 @@ type AuthParams struct {
 	Password string `json:"password"`
 }
 
+type AuthResponse struct {
+	User  types.User `json:user`
+	Token string     `json:token`
+}
+
+// Handlers should only
+// - Deserialise incoming request
+// - Fetch data
+// - Call some business logic
+// - Prepare response (Serialise)
+// - Send back the response to the caller
 func (h *AuthHandler) HandleAuth(c *fiber.Ctx) error {
 	var params AuthParams
 
@@ -41,13 +55,34 @@ func (h *AuthHandler) HandleAuth(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.EncryptedPassword), []byte(params.Password))
-
-	if err != nil {
+	if !types.IsValidPassword(user.EncryptedPassword, params.Password) {
 		return fmt.Errorf("invalid credentials")
+	}
+
+	resp := AuthResponse{
+		User:  *user,
+		Token: createTokenFromUser(user),
 	}
 
 	fmt.Println("Authenticated -> ", user.FirstName)
 
-	return nil
+	return c.JSON(resp)
+}
+
+func createTokenFromUser(user *types.User) string {
+	now := time.Now()
+	expires := now.Add(time.Hour * 4)
+	claims := jwt.MapClaims{
+		"id":      user.ID,
+		"email":   user.Email,
+		"expires": expires.Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secret := os.Getenv("JWT_SECRET")
+
+	tokenStr, _ := token.SignedString([]byte(secret))
+
+	return tokenStr
+
 }
