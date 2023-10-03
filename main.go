@@ -36,26 +36,29 @@ func main() {
 	//Initiate fibre
 	app := fiber.New(config)
 
-	// Separate handlers into versions
-	apiv1 := app.Group("api/v1", middleware.JWTAuthentication)
-
 	//Initialise handlers
 	var (
-		hotelStore = db.NewMongoHotelStore(*client)
-		roomStore  = db.NewMongoRoomStore(*client, hotelStore)
-		userStore  = db.NewMongoUserStore(*client, db.DBNAME)
-		store      = &db.Store{
-			Room:  roomStore,
-			Hotel: hotelStore,
-			User:  userStore,
+		hotelStore   = db.NewMongoHotelStore(*client)
+		roomStore    = db.NewMongoRoomStore(*client, hotelStore)
+		userStore    = db.NewMongoUserStore(*client, db.DBNAME)
+		bookingStore = db.NewMongoBookingStore(*client)
+		store        = &db.Store{
+			Room:    roomStore,
+			Hotel:   hotelStore,
+			User:    userStore,
+			Booking: bookingStore,
 		}
 		userHandler  = api.NewUserHandler(store)
 		hotelHandler = api.NewHotelHandler(store)
 		authHandler  = api.NewAuthHandler(store)
+		roomHandler  = api.NewRoomHandler(store)
 	)
 	//Auth
 	apiBase := app.Group("api")
 	apiBase.Post("/auth", authHandler.HandleAuth)
+
+	// Separate handlers into versions
+	apiv1 := app.Group("api/v1", middleware.JWTAuthentication(userStore))
 
 	//User Handlers
 	apiv1.Post("/user", userHandler.HandleCreateUser)
@@ -69,6 +72,9 @@ func main() {
 	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
 	apiv1.Put("/hotel/:id", hotelHandler.HandleUpdateHotel)
 	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
+
+	//Room handlers
+	apiv1.Post("/room/:id/book", roomHandler.HandleBookingRoom)
 
 	//Start the server
 	err = app.Listen(*listenAddr)
