@@ -41,6 +41,7 @@ func JWTAuthentication(userStore db.UserStore) fiber.Handler {
 			return fmt.Errorf("unauthorized")
 		}
 
+		// add user to the context so that it can be reused somewhere else
 		c.Context().SetUserValue("user", user)
 
 		return c.Next()

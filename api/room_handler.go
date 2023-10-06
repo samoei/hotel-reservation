@@ -28,7 +28,7 @@ type BookingRoomParams struct {
 	NumPersons int       `json:"numPersons,omitempty"`
 }
 
-func (p BookingRoomParams) validate() error {
+func (p BookingRoomParams) validateDates() error {
 	now := time.Now()
 
 	if now.After(p.FromDate) || now.After(p.TillDate) {
@@ -46,47 +46,39 @@ func (r RoomHandler) HandleBookingRoom(c *fiber.Ctx) error {
 		return err
 	}
 
-	err := params.validate()
-
-	if err != nil {
+	if err := params.validateDates(); err != nil {
 		return err
 	}
 
 	roomID, err := primitive.ObjectIDFromHex(c.Params("id"))
-
 	if err != nil {
 		return err
 	}
 
+	//Get user from the context
 	user, ok := c.Context().Value("user").(*types.User)
+
+	// For some reason we could not fetch the user from the context
 	if !ok {
 		return c.Status(http.StatusInternalServerError).JSON(GenericResponse{
 			Type: "error",
 			Msg:  "internal server error",
 		})
 	}
-	where := bson.M{
-		"roomID": roomID,
-		"fromDate": bson.M{
-			"$gte": params.FromDate,
-		},
-		"tillDate": bson.M{
-			"$lte": params.TillDate,
-		},
-	}
-	bookings, err := r.store.Booking.GetBookings(c.Context(), where)
 
+	//Check if there are any other bookings associated with this room during the same period
+	ok, err = r.roomCanBeBooked(c, roomID, params)
 	if err != nil {
 		return err
 	}
-
-	if len(bookings) > 0 {
+	if !ok {
 		return c.Status(http.StatusBadRequest).JSON(GenericResponse{
 			Type: "error",
-			Msg:  fmt.Sprintf("room %s already booked", roomID.String()),
+			Msg:  fmt.Sprintf("room with id %s is already booked", c.Params("id")),
 		})
 	}
 
+	//prepare to store this booking in the database
 	booking := types.Booking{
 		RoomID:     roomID,
 		UserID:     user.ID,
@@ -102,4 +94,22 @@ func (r RoomHandler) HandleBookingRoom(c *fiber.Ctx) error {
 
 	return c.JSON(inserted)
 
+}
+
+func (r RoomHandler) roomCanBeBooked(c *fiber.Ctx, roomID primitive.ObjectID, params BookingRoomParams) (bool, error) {
+	where := bson.M{
+		"roomID": roomID,
+		"fromDate": bson.M{
+			"$gte": params.FromDate,
+		},
+		"tillDate": bson.M{
+			"$lte": params.TillDate,
+		},
+	}
+	bookings, err := r.store.Booking.GetBookings(c.Context(), where)
+	if err != nil {
+		return false, err
+	}
+
+	return len(bookings) == 0, nil
 }

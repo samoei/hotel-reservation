@@ -48,10 +48,11 @@ func main() {
 			User:    userStore,
 			Booking: bookingStore,
 		}
-		userHandler  = api.NewUserHandler(store)
-		hotelHandler = api.NewHotelHandler(store)
-		authHandler  = api.NewAuthHandler(store)
-		roomHandler  = api.NewRoomHandler(store)
+		userHandler    = api.NewUserHandler(store)
+		hotelHandler   = api.NewHotelHandler(store)
+		authHandler    = api.NewAuthHandler(store)
+		roomHandler    = api.NewRoomHandler(store)
+		bookingHandler = api.NewBookingHandler(store)
 	)
 	//Auth
 	apiBase := app.Group("api")
@@ -75,6 +76,10 @@ func main() {
 
 	//Room handlers
 	apiv1.Post("/room/:id/book", roomHandler.HandleBookingRoom)
+
+	//Booking handlers
+	apiv1.Get("/bookings", bookingHandler.HandleGetBookings)
+	apiv1.Get("/booking/:id", bookingHandler.HandleGetBooking)
 
 	//Start the server
 	err = app.Listen(*listenAddr)
