@@ -15,6 +15,7 @@ import (
 var (
 	client     *mongo.Client
 	hotelStore *db.MongoHotelStore
+	userStore  *db.MongoUserStore
 	roomStore  *db.MongoRoomStore
 	ctx        context.Context
 )
@@ -78,10 +79,29 @@ func seedHotel(name, location string, stars int) {
 	}
 }
 
+func seedUser(firstName, lastName, email, password string) {
+
+	user, err := types.NewUserFromParams(types.CreateUserParams{
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     email,
+		Password:  password,
+	})
+
+	if err != nil {
+		log.Fatal("Could not create user from params", err)
+	}
+
+	userStore.InsertUser(ctx, user)
+
+}
+
 func main() {
 	seedHotel("Hotel Lamada", "Nairobi", 3)
 	seedHotel("Hotel One", "Berlin", 4)
 	seedHotel("Temple Hotel", "Dublin", 2)
+
+	seedUser("Samson", "Tallam", "samT@mail.com", "after123489")
 }
 
 func init() {
@@ -96,5 +116,6 @@ func init() {
 	}
 	hotelStore = db.NewMongoHotelStore(*client)
 	roomStore = db.NewMongoRoomStore(*client, hotelStore)
+	userStore = db.NewMongoUserStore(*client)
 
 }

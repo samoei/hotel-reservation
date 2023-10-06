@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -92,8 +93,25 @@ func (r RoomHandler) HandleBookingRoom(c *fiber.Ctx) error {
 		return err
 	}
 
+	//update Room that its booked
+	err = r.updateRoomBooked(c.Context(), roomID)
+
+	if err != nil {
+		fmt.Printf("Could not set room as booked %v", err)
+	}
+
 	return c.JSON(inserted)
 
+}
+
+func (r RoomHandler) updateRoomBooked(ctx context.Context, roomID primitive.ObjectID) error {
+	filter := bson.M{"_id": roomID} // Specify the filter to match the document you want to update.
+	update := bson.M{"$set": bson.M{"booked": true}}
+
+	if err := r.store.Room.UpdateRoom(ctx, filter, update); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r RoomHandler) roomCanBeBooked(c *fiber.Ctx, roomID primitive.ObjectID, params BookingRoomParams) (bool, error) {

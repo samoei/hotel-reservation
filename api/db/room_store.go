@@ -14,6 +14,7 @@ const roomCollectionName = "rooms"
 type RoomStore interface {
 	InsertRoom(context.Context, *types.Room) (*types.Room, error)
 	GetRooms(context.Context, bson.M) ([]*types.Room, error)
+	UpdateRoom(context.Context, bson.M, bson.M) error
 }
 
 type MongoRoomStore struct {
@@ -38,6 +39,7 @@ func (s *MongoRoomStore) InsertRoom(ctx context.Context, room *types.Room) (*typ
 		return nil, err
 	}
 	room.ID = res.InsertedID.(primitive.ObjectID)
+	room.Booked = false
 	// Update Hotel with this room id
 	filter := bson.M{"_id": room.HotelID}
 	update := bson.M{"$push": bson.M{"rooms": room.ID}}
@@ -60,4 +62,14 @@ func (s *MongoRoomStore) GetRooms(ctx context.Context, filter bson.M) ([]*types.
 		return nil, err
 	}
 	return rooms, nil
+}
+
+func (s *MongoRoomStore) UpdateRoom(ctx context.Context, filter, update bson.M) error {
+	_, err := s.collection.UpdateOne(ctx, filter, update)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

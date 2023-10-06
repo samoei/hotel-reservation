@@ -16,4 +16,5 @@ type Room struct {
 	RoomNumber    string             `bson:"room_number" json:"room_number"`
 	PricePerNight float64            `bson:"price_per_night" json:"price_per_night"`
 	HotelID       primitive.ObjectID `bson:"hotelID" json:"hotelID"`
+	Booked        bool               `bson:"booked" json:"booked"`
 }
